@@ -18,19 +18,29 @@ warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
 
 config_folder_path = 'E:\\finale-submission\\backend\\config' 
 
-@app.route('/generatemap', methods=['POST'])
-def MapGenerator():
+# @app.route('/generatemap', methods=['POST'])
+# def MapGenerator():
 
-    data = request.get_json()
+    # data = request.get_json()
 
-    print('[*] Received Data ; ')
-    print(data)
-    print()
+    # print('[*] Received Data ; ')
+    # print(data)
+    # print()
 
-    north = data['north']
-    south = data['south']
-    east = data['east']
-    west = data['west']
+    # north = data['north']
+    # south = data['south']
+    # east = data['east']
+    # west = data['west']
+@app.route('/bounding-box', methods=['POST'])
+def bounding_box():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    north = data.get('north')
+    south = data.get('south')
+    east = data.get('east')
+    west = data.get('west')
 
     # Define the bounding box (north, south, east, west)
     bbox = (north, south, east, west)
