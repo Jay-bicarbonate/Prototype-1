@@ -23,6 +23,8 @@ function GenerateMap() {
   };
 
   return (
+    <div className='mapGen'>
+      <h2>Map Generator</h2>
     <form onSubmit={handleSubmit}>
       <label>
         North:
@@ -46,6 +48,7 @@ function GenerateMap() {
       <br />
       <button type="submit">Submit</button>
     </form>
+    </div>
   );
 }
 

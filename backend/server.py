@@ -3,9 +3,20 @@ from flask_cors import CORS
 
 import osmnx as ox
 import subprocess
+import os
+
+import xml.etree.ElementTree as ET
+
+import warnings
 
 app = Flask(__name__)
 CORS(app)
+
+# Suppress specific warnings from osmnx, it was making the console very verbose hence supressing it
+warnings.filterwarnings('ignore', category=UserWarning, module='osmnx')
+warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
+
+config_folder_path = 'E:\\finale-submission\\backend\\config' 
 
 @app.route('/generatemap', methods=['POST'])
 def MapGenerator():
@@ -14,6 +25,7 @@ def MapGenerator():
 
     print('[*] Received Data ; ')
     print(data)
+    print()
 
     north = data['north']
     south = data['south']
@@ -25,16 +37,20 @@ def MapGenerator():
 
     try:
         # Download the OSM data within the bounding box
-        G = ox.graph.graph_from_bbox(*bbox, network_type='all')
+        G = ox.graph.graph_from_bbox(bbox=bbox, network_type='all')
 
         # Save the OSM data to a .osm file
-        osm_filepath = 'map.osm'
+        osm_filepath = os.path.join(config_folder_path, 'map.osm')
         ox.io.save_graph_xml(G, filepath=osm_filepath)
 
         # Convert the .osm file to SUMO XML format using netconvert
-        sumo_network_filepath = 'map.net.xml'
-        subprocess.run(['netconvert', '--osm-files', osm_filepath, '-o', sumo_network_filepath], check=True)
+        sumo_network_filepath = os.path.join(config_folder_path, 'map.net.xml')
+        print()
+        print("[*] Converting map.osm to map.osm.xml ...")
+        subprocess.run(['netconvert', '--osm-files', osm_filepath, '-o', sumo_network_filepath],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
+        print()
         print(f"SUMO network file saved to {sumo_network_filepath}")
 
         result = {"status" : "Map Generated Successfully !"}
@@ -53,7 +69,41 @@ def MapGenerator():
 #parameter will be provided via a input form for demographic data , then sent here in the form a JSON post req
 @app.route('/generatetraffic', methods=['POST'])
 def TrafficGenerator():
-    pass
+    # Receive JSON data from the request
+    data = request.json
+
+    # Create the root XML element
+    city = ET.Element('city')
+    
+    # Create the 'general' sub-element with attributes from the received data
+    general = ET.SubElement(city, 'general', attrib={
+        'inhabitants': data.get('inhabitants', ''),
+        'households': data.get('households', ''),
+        'childrenAgeLimit': data.get('childrenAgeLimit', ''),
+        'retirementAgeLimit': data.get('retirementAgeLimit', ''),
+        'carRate': data.get('carRate', ''),
+        'unemploymentRate': data.get('unemploymentRate', ''),
+        'footDistanceLimit': data.get('footDistanceLimit', ''),
+        'incomingTraffic': data.get('incomingTraffic', ''),
+        'outgoingTraffic': data.get('outgoingTraffic', '')
+    })
+
+
+    # Create an ElementTree object with the root element
+    print()
+    print('[*] Creating XML elements')
+    tree = ET.ElementTree(city)
+    
+    # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
+    stats_file_path = os.path.join(config_folder_path, 'stats.xml')
+    
+    
+    # Write the XML data to the file
+    print(f'[*] Saving XML file at {stats_file_path}')
+    tree.write(stats_file_path)
+    
+    # Return a success message as JSON response
+    return jsonify({'message': 'Data received and stored in XML file'}), 200
 
 
 #visualisation
@@ -77,10 +127,6 @@ def whatif():
 @app.route('/rlexperiment', methods=['POST'])
 def ReinforcementLearningExperiment():
     pass
-
-
-
-
 
 
 
