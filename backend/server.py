@@ -15,22 +15,47 @@ CORS(app)
 # Suppress specific warnings from osmnx, it was making the console very verbose hence supressing it
 warnings.filterwarnings('ignore', category=UserWarning, module='osmnx')
 warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
+<<<<<<< Updated upstream
 
 config_folder_path = 'E:\\finale-submission\\backend\\config' 
 
 @app.route('/generatemap', methods=['POST'])
 def MapGenerator():
+=======
+>>>>>>> Stashed changes
 
-    data = request.get_json()
+config_folder_path = 'E:\\finale-submission\\backend\\config'
 
+<<<<<<< Updated upstream
     print('[*] Received Data ; ')
     print(data)
     print()
+=======
+>>>>>>> Stashed changes
 
-    north = data['north']
-    south = data['south']
-    east = data['east']
-    west = data['west']
+# @app.route('/generatemap', methods=['POST'])
+# def MapGenerator():
+
+# data = request.get_json()
+
+# print('[*] Received Data ; ')
+# print(data)
+# print()
+
+# north = data['north']
+# south = data['south']
+# east = data['east']
+# west = data['west']
+@app.route('/bounding-box', methods=['POST'])
+def bounding_box():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    north = data.get('north')
+    south = data.get('south')
+    east = data.get('east')
+    west = data.get('west')
 
     # Define the bounding box (north, south, east, west)
     bbox = (north, south, east, west)
@@ -48,12 +73,16 @@ def MapGenerator():
         print()
         print("[*] Converting map.osm to map.osm.xml ...")
         subprocess.run(['netconvert', '--osm-files', osm_filepath, '-o', sumo_network_filepath],
+<<<<<<< Updated upstream
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+=======
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+>>>>>>> Stashed changes
 
         print()
         print(f"SUMO network file saved to {sumo_network_filepath}")
 
-        result = {"status" : "Map Generated Successfully !"}
+        result = {"status": "Map Generated Successfully !"}
 
         return jsonify(result)
 
@@ -64,9 +93,8 @@ def MapGenerator():
         print(f"An unexpected error occurred: {e}")
 
 
-
-#traffic Generator using the ActivityGen algorithm from SUMO
-#parameter will be provided via a input form for demographic data , then sent here in the form a JSON post req
+# traffic Generator using the ActivityGen algorithm from SUMO
+# parameter will be provided via a input form for demographic data , then sent here in the form a JSON post req
 @app.route('/generatetraffic', methods=['POST'])
 def TrafficGenerator():
     # Receive JSON data from the request
@@ -74,7 +102,11 @@ def TrafficGenerator():
 
     # Create the root XML element
     city = ET.Element('city')
+<<<<<<< Updated upstream
     
+=======
+
+>>>>>>> Stashed changes
     # Create the 'general' sub-element with attributes from the received data
     general = ET.SubElement(city, 'general', attrib={
         'inhabitants': data.get('inhabitants', ''),
@@ -88,11 +120,15 @@ def TrafficGenerator():
         'outgoingTraffic': data.get('outgoingTraffic', '')
     })
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
     # Create an ElementTree object with the root element
     print()
     print('[*] Creating XML elements')
     tree = ET.ElementTree(city)
+<<<<<<< Updated upstream
     
     # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
     stats_file_path = os.path.join(config_folder_path, 'stats.xml')
@@ -102,34 +138,47 @@ def TrafficGenerator():
     print(f'[*] Saving XML file at {stats_file_path}')
     tree.write(stats_file_path)
     
+=======
+
+    # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
+    stats_file_path = os.path.join(config_folder_path, 'stats.xml')
+
+    # Write the XML data to the file
+    print(f'[*] Saving XML file at {stats_file_path}')
+    tree.write(stats_file_path)
+
+>>>>>>> Stashed changes
     # Return a success message as JSON response
     return jsonify({'message': 'Data received and stored in XML file'}), 200
 
 
-#visualisation
-#this function will visualise the generated traffic data and show it to the user as per the parameters.
-#parameters could be different visulaisation option such as "average speed per road" OR "total vehicle count per road" etc
+# visualisation
+# this function will visualise the generated traffic data and show it to the user as per the parameters.
+# parameters could be different visulaisation option such as "average speed per road" OR "total vehicle count per road" etc
 @app.route('/visualiser', methods=['POST'])
 def visualiser():
     pass
 
 
-#what-if scinario
-#need to think about this one , either do it in the webapp or need to use SUMO netedit for similicity.
-#implimenting netedit functionality into a webapp would be a time taking and not so easy task tbh.
+# what-if scinario
+# need to think about this one , either do it in the webapp or need to use SUMO netedit for similicity.
+# implimenting netedit functionality into a webapp would be a time taking and not so easy task tbh.
 @app.route('/whatif', methods=['POST'])
 def whatif():
     pass
 
 
-#Reinforment Learning experiment
-#we will do this experiment in the SUMO-GUI with realtime TraCI interface
+# Reinforment Learning experiment
+# we will do this experiment in the SUMO-GUI with realtime TraCI interface
 @app.route('/rlexperiment', methods=['POST'])
 def ReinforcementLearningExperiment():
     pass
 
 
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
 if __name__ == '__main__':
     app.run(debug=True)
