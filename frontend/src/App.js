@@ -1,6 +1,7 @@
 import React from 'react';
 import GenerateMap from './components/MapGen';
 import GetActivityGenData from './components/ActivityGen';
+import RunSim from './components/RunSim';
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <h1>Finale Submission</h1>
       <GenerateMap/>
       <GetActivityGenData/>
+      <RunSim/>
     </div>
   );
 }
