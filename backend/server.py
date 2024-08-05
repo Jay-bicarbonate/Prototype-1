@@ -26,12 +26,11 @@ def MapGenerator():
 
 config_folder_path = 'E:\\finale-submission\\backend\\config'
 
-<<<<<<< Updated upstream
+
     print('[*] Received Data ; ')
     print(data)
     print()
-=======
->>>>>>> Stashed changes
+
 
 # @app.route('/generatemap', methods=['POST'])
 # def MapGenerator():
@@ -174,8 +173,6 @@ def whatif():
 def ReinforcementLearningExperiment():
     pass
 
-
-<<<<<<< Updated upstream
 
 
 =======
