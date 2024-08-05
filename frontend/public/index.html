@@ -9,27 +9,129 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
     <style>
-        #map { height: 100vh; width: 100vw; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        #map {
+            height: 80vh;
+            width: 80vw;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            position: relative;
+        }
+        .controls {
+            margin-top: 10px;
+        }
+        button {
+            margin-right: 10px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .coordinates {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 5px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            color: black;
+            z-index: 1000;
+        }
+        #nextPage {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+        #nextPage:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div class="container">
+        <h1>Final Project</h1>
+        <div id="map">
+            <div class="coordinates" id="coordinates">Lat: --, Lng: --</div>
+        </div>
+        <div class="controls">
+            <button id="resetMarkers">Reset Markers</button>
+            <button id="confirmMarkers">Confirm Markers</button>
+            <button id="nextPage" disabled>Next Page</button>
+        </div>
+    </div>
     <script>
-        var map = L.map('map').setView([20.5937, 78.9629], 5);
+        var map = L.map('map').setView([20.5937, 78.9629], 5); // Center on India
+
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        var markers = [];
-        map.on('click', function(e) {
-            var marker = L.marker(e.latlng).addTo(map);
-            markers.push(marker);
+        // Define bounds for India
+        var southWest = L.latLng(6.462, 68.175);
+        var northEast = L.latLng(37.6, 97.4);
+        var bounds = L.latLngBounds(southWest, northEast);
 
+        // Set the map bounds to restrict the view to India
+        map.setMaxBounds(bounds);
+        map.on('drag', function() {
+            map.panInsideBounds(bounds);
+        });
+
+        var markers = [];
+        var boundingBoxLayer;
+        var coordinatesConfirmed = false;  // Flag to track if coordinates are confirmed
+
+        // Function to handle adding markers
+        function addMarker(e) {
+            if (markers.length < 2) {
+                var marker = L.marker(e.latlng).addTo(map);
+                markers.push(marker);
+
+                if (markers.length === 2) {
+                    var bounds = L.latLngBounds(markers[0].getLatLng(), markers[1].getLatLng());
+                    boundingBoxLayer = L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
+                }
+            }
+        }
+
+        map.on('click', addMarker);
+
+        document.getElementById('resetMarkers').addEventListener('click', function() {
+            markers.forEach(marker => map.removeLayer(marker));
+            if (boundingBoxLayer) {
+                map.removeLayer(boundingBoxLayer);
+            }
+            markers = [];
+            coordinatesConfirmed = false;  // Reset the confirmation flag
+            document.getElementById('nextPage').disabled = true;  // Disable the Next Page button
+        });
+
+        document.getElementById('confirmMarkers').addEventListener('click', function() {
             if (markers.length === 2) {
                 var bounds = L.latLngBounds(markers[0].getLatLng(), markers[1].getLatLng());
-
-                L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
 
                 var boundingBox = {
                     north: bounds.getNorth(),
@@ -51,7 +153,24 @@
                 .then(response => response.json())
                 .then(data => console.log(data))
                 .catch(error => console.error('Error:', error));
+
+                coordinatesConfirmed = true;  // Set the confirmation flag
+                document.getElementById('nextPage').disabled = false;  // Enable the Next Page button
+            } else {
+                alert("Please select exactly 2 markers.");
             }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function() {
+            if (coordinatesConfirmed) {
+                window.location.href = 'demographic.html';  // Replace 'nextPage.html' with your actual next page URL
+            }
+        });
+
+        map.on('mousemove', function(e) {
+            var latLng = e.latlng;
+            document.getElementById('coordinates').innerText = 
+                'Lat: ' + latLng.lat.toFixed(5) + ', Lng: ' + latLng.lng.toFixed(5);
         });
     </script>
 </body>

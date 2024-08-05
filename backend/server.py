@@ -15,21 +15,8 @@ CORS(app)
 # Suppress specific warnings from osmnx, it was making the console very verbose hence supressing it
 warnings.filterwarnings('ignore', category=UserWarning, module='osmnx')
 warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
-<<<<<<< Updated upstream
-
-config_folder_path = 'E:\\finale-submission\\backend\\config' 
-
-@app.route('/generatemap', methods=['POST'])
-def MapGenerator():
-=======
->>>>>>> Stashed changes
 
 config_folder_path = 'E:\\finale-submission\\backend\\config'
-
-
-    print('[*] Received Data ; ')
-    print(data)
-    print()
 
 
 # @app.route('/generatemap', methods=['POST'])
@@ -72,11 +59,7 @@ def bounding_box():
         print()
         print("[*] Converting map.osm to map.osm.xml ...")
         subprocess.run(['netconvert', '--osm-files', osm_filepath, '-o', sumo_network_filepath],
-<<<<<<< Updated upstream
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-=======
                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
->>>>>>> Stashed changes
 
         print()
         print(f"SUMO network file saved to {sumo_network_filepath}")
@@ -101,11 +84,7 @@ def TrafficGenerator():
 
     # Create the root XML element
     city = ET.Element('city')
-<<<<<<< Updated upstream
-    
-=======
 
->>>>>>> Stashed changes
     # Create the 'general' sub-element with attributes from the received data
     general = ET.SubElement(city, 'general', attrib={
         'inhabitants': data.get('inhabitants', ''),
@@ -119,25 +98,10 @@ def TrafficGenerator():
         'outgoingTraffic': data.get('outgoingTraffic', '')
     })
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
     # Create an ElementTree object with the root element
     print()
     print('[*] Creating XML elements')
     tree = ET.ElementTree(city)
-<<<<<<< Updated upstream
-    
-    # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
-    stats_file_path = os.path.join(config_folder_path, 'stats.xml')
-    
-    
-    # Write the XML data to the file
-    print(f'[*] Saving XML file at {stats_file_path}')
-    tree.write(stats_file_path)
-    
-=======
 
     # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
     stats_file_path = os.path.join(config_folder_path, 'stats.xml')
@@ -146,7 +110,6 @@ def TrafficGenerator():
     print(f'[*] Saving XML file at {stats_file_path}')
     tree.write(stats_file_path)
 
->>>>>>> Stashed changes
     # Return a success message as JSON response
     return jsonify({'message': 'Data received and stored in XML file'}), 200
 
@@ -174,8 +137,5 @@ def ReinforcementLearningExperiment():
     pass
 
 
-
-=======
->>>>>>> Stashed changes
 if __name__ == '__main__':
     app.run(debug=True)
