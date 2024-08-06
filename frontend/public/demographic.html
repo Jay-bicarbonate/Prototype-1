@@ -1,13 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demographic Input</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-        <p>hello
-                
-        </p>
+    <div class="container">
+        <h2 class="text-center">Demographic Input</h2>
+        <form id="demographicForm">
+            <div class="form-group row">
+                <label for="inhabitants" class="col-sm-4 col-form-label">Inhabitants:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="inhabitants" name="inhabitants" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="inhabitantsSlider" min="0" max="100000" step="1000">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="households" class="col-sm-4 col-form-label">Households:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="households" name="households" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="householdsSlider" min="0" max="50000" step="500">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="childrenAgeLimit" class="col-sm-4 col-form-label">Children Age Limit:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="childrenAgeLimit" name="childrenAgeLimit" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="childrenAgeLimitSlider" min="0" max="18" step="1">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="retirementAgeLimit" class="col-sm-4 col-form-label">Retirement Age Limit:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="retirementAgeLimit" name="retirementAgeLimit" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="retirementAgeLimitSlider" min="55" max="70" step="1">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="carRate" class="col-sm-4 col-form-label">Car Rate:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="carRate" name="carRate" step="0.01" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="carRateSlider" min="0" max="1" step="0.01">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="unemploymentRate" class="col-sm-4 col-form-label">Unemployment Rate:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="unemploymentRate" name="unemploymentRate" step="0.01" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="unemploymentRateSlider" min="0" max="1" step="0.01">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="footDistanceLimit" class="col-sm-4 col-form-label">Foot Distance Limit:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="footDistanceLimit" name="footDistanceLimit" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="footDistanceLimitSlider" min="0" max="50" step="1">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="incomingTraffic" class="col-sm-4 col-form-label">Incoming Traffic:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="incomingTraffic" name="incomingTraffic" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="incomingTrafficSlider" min="0" max="10000" step="100">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="outgoingTraffic" class="col-sm-4 col-form-label">Outgoing Traffic:</label>
+                <div class="col-sm-4">
+                    <input type="number" class="form-control" id="outgoingTraffic" name="outgoingTraffic" required />
+                </div>
+                <div class="col-sm-4">
+                    <input type="range" class="form-control-range" id="outgoingTrafficSlider" min="0" max="10000" step="100">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-custom btn-block">Submit</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    <script src="script.js"></script>
 </body>
 </html>
