@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 
 function GetActivityGenData() {
   const [formData, setFormData] = useState({
-    inhabitants: '56000',
-    households: '12000',
+    inhabitants: '1300',
+    households: '252',
     childrenAgeLimit: '18',
     retirementAgeLimit: '60',
     carRate: '0.075',
     unemploymentRate: '0.071',
     footDistanceLimit: '1.5',
-    incomingTraffic: '5726',
-    outgoingTraffic: '5726'
+    incomingTraffic: '121',
+    outgoingTraffic: '121',
+    randomTrips: '1000'
   });
 
   const handleChange = (e) => {
@@ -73,6 +74,10 @@ function GetActivityGenData() {
         <label>
           Outgoing Traffic:
           <input type="number" name="outgoingTraffic" value={formData.outgoingTraffic} onChange={handleChange} />
+        </label>
+        <label>
+          Random Trips:
+          <input type="number" name="Random Trips" value={formData.randomTrips} onChange={handleChange} />
         </label>
         <button type="submit">Submit</button>
       </form>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+// 24.072170688204157, south: 23.981233711026714, east: 74.81498427757113, west: 74.69477235202582
+
 function GenerateMap() {
   const [north, setNorth] = useState('24.072170688204157');
   const [south, setSouth] = useState('23.981233711026714');

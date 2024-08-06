@@ -17,6 +17,8 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
+RandomTripsCount = None
+
 # Suppress specific warnings from osmnx, it was making the console very verbose hence supressing it
 warnings.filterwarnings('ignore', category=UserWarning, module='osmnx')
 warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
@@ -74,8 +76,16 @@ def MapGenerator():
 #parameter will be provided via a input form for demographic data , then sent here in the form a JSON post req
 @app.route('/generatetraffic', methods=['POST'])
 def TrafficGenerator():
+
+    #to be used in "run simulation" later
+    global RandomTripsCount
+
     # Receive JSON data from the request
     data = request.json
+
+    #assigning value to the variable for later use in "run Simulation"
+    RandomTripsCount = str(data.get('randomTrips'))
+    print(f'[*] Received Random trips {RandomTripsCount}')
 
     #now creating the XML file for ActivityGen
     #this file will contain a lot demographic data such as general-info , population-info, work-hour-info etc.
@@ -84,15 +94,15 @@ def TrafficGenerator():
 
     # Create the 'general' sub-element with attributes from the received data
     general = ET.SubElement(city, 'general', attrib={
-        'inhabitants': data.get('inhabitants', '56000'),
-        'households': data.get('households', '12000'),
+        'inhabitants': data.get('inhabitants', '1300'),
+        'households': data.get('households', '252'),
         'childrenAgeLimit': data.get('childrenAgeLimit', '18'),
         'retirementAgeLimit': data.get('retirementAgeLimit', '60'),
         'carRate': data.get('carRate', '0.075'),
         'unemploymentRate': data.get('unemploymentRate', '0.071'),
         'footDistanceLimit': data.get('footDistanceLimit', '1.5'),
-        'incomingTraffic': data.get('incomingTraffic', '5726'),
-        'outgoingTraffic': data.get('outgoingTraffic', '5726')
+        'incomingTraffic': data.get('incomingTraffic', '121'),
+        'outgoingTraffic': data.get('outgoingTraffic', '121')
     })
 
     # Add 'parameters' element
@@ -106,8 +116,8 @@ def TrafficGenerator():
 
     # Add 'population' element with 'bracket' sub-elements
     population = ET.SubElement(city, 'population')
-    ET.SubElement(population, 'bracket', attrib={'beginAge': '0', 'endAge': '30', 'peopleNbr': '30'})
-    ET.SubElement(population, 'bracket', attrib={'beginAge': '30', 'endAge': '60', 'peopleNbr': '40'})
+    ET.SubElement(population, 'bracket', attrib={'beginAge': '0', 'endAge': '30', 'peopleNbr': '40'})
+    ET.SubElement(population, 'bracket', attrib={'beginAge': '30', 'endAge': '60', 'peopleNbr': '30'})
     ET.SubElement(population, 'bracket', attrib={'beginAge': '60', 'endAge': '90', 'peopleNbr': '30'})
 
     # Add 'workHours' element with 'opening' and 'closing' sub-elements
@@ -146,19 +156,47 @@ def TrafficGenerator():
 @app.route('/run-simulation', methods=['POST'])
 def run_simulation():
 
+    global RandomTripsCount
+
     sumo_network_filepath = os.path.join(config_folder_path, 'map.net.xml')
     stats_file_path = os.path.join(config_folder_path, 'stats.xml')
-    output_file_path = os.path.join(config_folder_path, 'routes.rou.xml')
+    output_file_path_ActivityGen = os.path.join(config_folder_path, 'routes.rou.xml')
+    output_file_path_RandomTrips = os.path.join(config_folder_path, 'trips.trips.xml')
     duorouter_generated_file_path = os.path.join(config_folder_path, 'Final_routes.rou.xml')
+
+    randomTripspy_path = os.path.join("C:\\Program Files (x86)\\Eclipse\\Sumo\\tools","randomTrips.py")
+
+    
 
     print()
     print('[*] executing ActivityGen...')
-    subprocess.run(['activitygen', '--net-file', sumo_network_filepath, '--stat-file',stats_file_path, '--output-file', output_file_path],
+    subprocess.run(['activitygen', '--net-file', sumo_network_filepath, '--stat-file',stats_file_path, '--output-file', output_file_path_ActivityGen],
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     
     print('[*] executing duorouter...')
-    subprocess.run(['duarouter', '--net-file', sumo_network_filepath, '--route-files', output_file_path, '--output-file', duorouter_generated_file_path],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    try:
+        subprocess.run(['duarouter', '--net-file', sumo_network_filepath, '--route-files', output_file_path_ActivityGen, '--output-file', duorouter_generated_file_path],
+                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+        print("Continuing execution with randomTrips.py")
+        pass
+
+    print()
+    print(f'[*] Generating RandomTrips : {RandomTripsCount}....')
+    
+    # subprocess.run(['cd', 'config'],
+    #                 cwd=config_path,check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    subprocess.run(['python', randomTripspy_path, '--net-file', sumo_network_filepath, '-e', RandomTripsCount],
+                   cwd=config_folder_path, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    print('[*] executing duorouter...')
+    try:
+        subprocess.run(['duarouter', '--net-file', sumo_network_filepath, '--route-files', output_file_path_RandomTrips, '--output-file', duorouter_generated_file_path],
+                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")    
 
 
     # Define the content of the sumocfg file
@@ -168,13 +206,12 @@ def run_simulation():
             <net-file value="map.net.xml"/>
             <route-files value="Final_routes.rou.xml"/>
         </input>
-        <time>
-            <begin value="0"/>
-            <end value="300"/>
-        </time>
+        <output>
+            <netstate-dump value="netstatedump.xml"/>
+        </output>
     </configuration>
     """
-
+    
     print("[*]Generating main_sim.sumocfg.")
     # Save the content to main_sim.sumocfg
     sumocfg_file_path = os.path.join(config_folder_path, 'main_sim.sumocfg')
@@ -186,37 +223,8 @@ def run_simulation():
 
     print('[*] Starting simulation ....')
 
-    # Path to your sumo executable
-    sumoBinary = "sumo"  # or "sumo-gui" for GUI version
-    sumoConfig = sumocfg_file_path  #this is sumo config file which will contain the address of network file , routes file , time start , time end etc
-
-    # Start the SUMO simulation using TraCI
-    traci.start([sumoBinary, "-c", sumoConfig])
-
-    # Dictionary to store vehicle counts per road
-    road_vehicle_counts = {}
-
-    # Run the simulation
-    step = 0
-    while step < 100:
-        traci.simulationStep()
-        # Get the list of edges
-        edges = traci.edge.getIDList()
-        for edge in edges:
-            if edge not in road_vehicle_counts:
-                road_vehicle_counts[edge] = 0
-            road_vehicle_counts[edge] += traci.edge.getLastStepVehicleNumber(edge)
-        step += 1
-        print(step)
-
-    # Close the simulation
-    traci.close()
-
-    # Extract data for visualization
-    roads = list(road_vehicle_counts.keys())
-    counts = list(road_vehicle_counts.values())
-
-    print('[*]Data Generated successfully !!')
+    subprocess.run(['sumo', '-c', sumocfg_file_path],
+                   cwd=config_folder_path, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
     result = {"status": "Simulation Completed ..."}
 
