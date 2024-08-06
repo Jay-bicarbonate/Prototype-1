@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 
 function GetActivityGenData() {
   const [formData, setFormData] = useState({
-    inhabitants: '',
-    households: '',
-    childrenAgeLimit: '',
-    retirementAgeLimit: '',
-    carRate: '',
-    unemploymentRate: '',
-    footDistanceLimit: '',
-    incomingTraffic: '',
-    outgoingTraffic: ''
+    inhabitants: '56000',
+    households: '12000',
+    childrenAgeLimit: '18',
+    retirementAgeLimit: '60',
+    carRate: '0.075',
+    unemploymentRate: '0.071',
+    footDistanceLimit: '1.5',
+    incomingTraffic: '5726',
+    outgoingTraffic: '5726'
   });
 
   const handleChange = (e) => {
