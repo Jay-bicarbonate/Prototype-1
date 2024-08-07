@@ -1,0 +1,22 @@
+.mapGen {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mapGen form {
+  display: flex;
+  flex-direction: column;
+}
+
+.mapGen label {
+  margin-bottom: 10px;
+}
+
+.mapGen input {
+  margin-left: 10px;
+}
+
+.mapGen button {
+  margin-top: 10px;
+}

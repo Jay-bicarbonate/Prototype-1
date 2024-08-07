@@ -1,4 +1,3 @@
-// components/RunSim.jsx
 import React from 'react';
 
 class RunSim extends React.Component {
