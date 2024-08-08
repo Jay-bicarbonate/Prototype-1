@@ -14,6 +14,8 @@ import traci.constants as tc
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.roadblocker import block_road
+
 app = Flask(__name__)
 CORS(app)
 
@@ -224,7 +226,7 @@ def run_simulation():
     print('[*] Starting simulation ....')
 
     subprocess.run(['sumo', '-c', sumocfg_file_path],
-                   cwd=config_folder_path, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                   cwd=config_folder_path, check=True, stderr=subprocess.STDOUT)
 
     result = {"status": "Simulation Completed ..."}
 
@@ -246,6 +248,23 @@ def visualiser():
 @app.route('/whatif', methods=['POST'])
 def whatif():
     pass
+
+
+@app.route('/update-road', methods=['POST'])
+def update_road():
+    data = request.json
+    road_id = data.get('roadId')
+
+    if not road_id:
+        return jsonify({'error': 'No road ID provided'}), 400
+
+    try:
+        file_path = 'E:/finale-submission/backend/config/map.net.xml'
+        block_road(file_path, road_id)
+        return jsonify({'success': 'Road ID updated successfully'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 #Reinforment Learning experiment
