@@ -3,6 +3,8 @@ import GenerateMap from './components/MapGen';
 import GetActivityGenData from './components/ActivityGen';
 import RunSim from './components/RunSim';
 import RoadIdInput from './components/Roadblock';
+import GenerateConfigButton from './components/GenConfigFiles';
+import PlotComponent from './components/plotComponent';
 
 function App() {
   return (
@@ -10,7 +12,9 @@ function App() {
       <h1>Finale Submission</h1>
       <GenerateMap/>
       <GetActivityGenData/>
+      <GenerateConfigButton/>
       <RunSim/>
+      <PlotComponent/>
       <RoadIdInput/>
     </div>
   );

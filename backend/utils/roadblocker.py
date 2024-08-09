@@ -34,7 +34,7 @@ def block_road(file_path, road_id):
     except Exception as e:
         print(f"Error writing XML file: {e}")
 
-# Example usage
-file_path = 'E:\\finale-submission\\backend\\config\\map.net.xml'
-road_id = '31'
-block_road(file_path, road_id)
+# # Example usage
+# file_path = 'E:\\finale-submission\\backend\\config\\map.net.xml'
+# road_id = '31'
+# block_road(file_path, road_id)

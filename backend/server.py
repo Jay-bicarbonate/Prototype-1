@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 import osmnx as ox
@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from utils.roadblocker import block_road
+from utils.Visualiser import plot_total_vehicle_heatmap
 
 app = Flask(__name__)
 CORS(app)
@@ -152,12 +153,8 @@ def TrafficGenerator():
     return jsonify({'message': 'Data received and stored in XML file'}), 200
 
 
-#button click "run simulation" triggers this function to execute some commands
-#executes ActivityGen to create vehicle and executes duarouter to create routes
-#also creates the mainsim.sumocfg config file used by TraCI and SUMO
-@app.route('/run-simulation', methods=['POST'])
-def run_simulation():
-
+@app.route('/generate-config', methods=['POST'])
+def generate_config():
     global RandomTripsCount
 
     sumo_network_filepath = os.path.join(config_folder_path, 'map.net.xml')
@@ -187,9 +184,6 @@ def run_simulation():
     print()
     print(f'[*] Generating RandomTrips : {RandomTripsCount}....')
     
-    # subprocess.run(['cd', 'config'],
-    #                 cwd=config_path,check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
     subprocess.run(['python', randomTripspy_path, '--net-file', sumo_network_filepath, '-e', RandomTripsCount],
                    cwd=config_folder_path, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
@@ -208,6 +202,13 @@ def run_simulation():
             <net-file value="map.net.xml"/>
             <route-files value="Final_routes.rou.xml"/>
         </input>
+        <processing>
+            <ignore-route-errors value="true"/>
+        </processing>
+        <routing>
+            <device.rerouting.adaptation-steps value="18"/>
+            <device.rerouting.adaptation-interval value="10"/>
+        </routing>
         <output>
             <netstate-dump value="netstatedump.xml"/>
         </output>
@@ -223,7 +224,16 @@ def run_simulation():
     print("[#] All files generated Successfully")
     print()
 
+    return jsonify({"message": "Config file generated successfully!"}), 200
+
+#button click "run simulation" triggers this function to execute some commands
+#executes ActivityGen to create vehicle and executes duarouter to create routes
+#also creates the mainsim.sumocfg config file used by TraCI and SUMO
+@app.route('/run-simulation', methods=['POST'])
+def run_simulation():
+
     print('[*] Starting simulation ....')
+    sumocfg_file_path = os.path.join(config_folder_path, 'main_sim.sumocfg')
 
     subprocess.run(['sumo', '-c', sumocfg_file_path],
                    cwd=config_folder_path, check=True, stderr=subprocess.STDOUT)
@@ -237,9 +247,16 @@ def run_simulation():
 #visualisation
 #this function will visualise the generated traffic data and show it to the user as per the parameters.
 #parameters could be different visulaisation option such as "average speed per road" OR "total vehicle count per road" etc
-@app.route('/visualiser', methods=['POST'])
-def visualiser():
-    pass
+@app.route('/create-plot', methods=['GET'])
+def create_plot():
+
+    net_file = os.path.join(config_folder_path, 'map.net.xml')
+    netstate_file = os.path.join(config_folder_path, 'netstatedump.xml')
+
+    img = plot_total_vehicle_heatmap(net_file,netstate_file)
+
+    # Return the plot as a response
+    return send_file(img, mimetype='image/png')
 
 
 #what-if scinario
@@ -272,7 +289,6 @@ def update_road():
 @app.route('/rlexperiment', methods=['POST'])
 def ReinforcementLearningExperiment():
     pass
-
 
 
 
