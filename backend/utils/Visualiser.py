@@ -4,6 +4,7 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 import numpy as np
 import io
+from collections import defaultdict
 
 # Function to extract edges and their shapes from map.net.xml
 def extract_edges_from_net(net_file):
@@ -96,6 +97,45 @@ def plot_total_vehicle_heatmap(net_file, netstatedump_file):
     print("Plot saved to buffer.")
 
     return img
+
+def aggregate_vehicle_counts(netfile, networkfile):
+    # Step 1: Parse the netstatedump.xml file to get vehicle counts by edge
+    tree = ET.parse(netfile)
+    root = tree.getroot()
+
+    edge_vehicle_count = defaultdict(int)
+
+    for timestep in root.findall('timestep'):
+        for edge in timestep.findall('edge'):
+            edge_id = edge.get('id')
+            vehicle_count = 0
+            for lane in edge.findall('lane'):
+                vehicle_count += len(lane.findall('vehicle'))
+            edge_vehicle_count[edge_id] += vehicle_count
+
+    # Step 2: Parse the network file to map edge IDs to road types
+    tree = ET.parse(networkfile)
+    root = tree.getroot()
+
+    edge_to_type = {}
+
+    for edge in root.findall('edge'):
+        edge_id = edge.get('id')
+        road_type = edge.get('type')
+        edge_to_type[edge_id] = road_type
+
+    # Step 3: Aggregate vehicle counts by road type, handling None values
+    road_type_vehicle_count = defaultdict(int)
+
+    for edge_id, count in edge_vehicle_count.items():
+        road_type = edge_to_type.get(edge_id, "misc")  # Replace None with "misc"
+        road_type_vehicle_count[road_type] += count
+    # Replace None key with 'misc'
+    if None in road_type_vehicle_count:
+        road_type_vehicle_count['misc'] = road_type_vehicle_count.pop(None)
+        
+    # Convert the result to JSON
+    return road_type_vehicle_count
 
 # net_file = "E:\\finale-submission\\backend\\config\\map.net.xml"
 # netstate_file = "E:\\finale-submission\\backend\\config\\netstatedump.xml"

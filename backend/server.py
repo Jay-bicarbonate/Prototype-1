@@ -4,6 +4,7 @@ from flask_cors import CORS
 import osmnx as ox
 import subprocess
 import os
+import base64
 
 import xml.etree.ElementTree as ET
 
@@ -15,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from utils.roadblocker import block_road
-from utils.Visualiser import plot_total_vehicle_heatmap
+from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts
 
 app = Flask(__name__)
 CORS(app)
@@ -253,10 +254,20 @@ def create_plot():
     net_file = os.path.join(config_folder_path, 'map.net.xml')
     netstate_file = os.path.join(config_folder_path, 'netstatedump.xml')
 
+    #get plot image and covert to b64 to send!!
     img = plot_total_vehicle_heatmap(net_file,netstate_file)
+    img_base64 = base64.b64encode(img.read()).decode('utf-8')
 
-    # Return the plot as a response
-    return send_file(img, mimetype='image/png')
+    # Get JSON plot data
+    json_plot_data = aggregate_vehicle_counts(netstate_file, net_file)
+
+    # Combine the image data and JSON data into one response
+    response = {
+        'image': img_base64,
+        'json_data': json_plot_data
+    }
+
+    return jsonify(response)
 
 
 #what-if scinario
