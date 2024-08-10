@@ -5,6 +5,8 @@ import matplotlib.cm as cm
 import numpy as np
 import io
 from collections import defaultdict
+import networkx as nx
+from io import BytesIO
 
 # Function to extract edges and their shapes from map.net.xml
 def extract_edges_from_net(net_file):
@@ -136,6 +138,53 @@ def aggregate_vehicle_counts(netfile, networkfile):
         
     # Convert the result to JSON
     return road_type_vehicle_count
+
+def plot_highlighted_roads(net_file, road_id1):
+    # Parse the SUMO net.xml file
+    tree = ET.parse(net_file)
+    root = tree.getroot()
+
+    # Initialize a graph
+    G = nx.Graph()
+
+    # Extract edges and their coordinates from the SUMO network file
+    for edge in root.findall('edge'):
+        edge_id = edge.get('id')
+        for lane in edge.findall('lane'):
+            shape = lane.get('shape')
+            if shape:
+                # Parse the shape attribute to get coordinates
+                coordinates = shape.split()
+                x_coords, y_coords = zip(*[map(float, coord.split(',')) for coord in coordinates])
+
+                # Add nodes and edges to the graph
+                for i in range(len(x_coords) - 1):
+                    u = (x_coords[i], y_coords[i])
+                    v = (x_coords[i+1], y_coords[i+1])
+                    if not G.has_node(u):
+                        G.add_node(u)
+                    if not G.has_node(v):
+                        G.add_node(v)
+                    G.add_edge(u, v, id=edge_id)
+
+    # Define edge colors and widths
+    edge_colors = []
+    edge_widths = []
+    for u, v, data in G.edges(data=True):
+        if data['id'] == road_id1:
+            edge_colors.append('RED')  # Bright color for the specified roads
+            edge_widths.append(2.5)  # Thicker line width for highlighted roads
+        else:
+            edge_colors.append('lightgray')  # Lighter color for other roads
+            edge_widths.append(1.0)  # Default line width for other roads
+
+    # Draw the graph
+    pos = {node: node for node in G.nodes()}  # Use node coordinates as positions
+    fig, ax = plt.subplots(figsize=(12, 12))
+    nx.draw(G, pos, with_labels=False, edge_color=edge_colors, node_size=10, width=1.5, ax=ax)
+    ax.set_title('SUMO Network with Highlighted Roads')
+
+    return fig
 
 # net_file = "E:\\finale-submission\\backend\\config\\map.net.xml"
 # netstate_file = "E:\\finale-submission\\backend\\config\\netstatedump.xml"

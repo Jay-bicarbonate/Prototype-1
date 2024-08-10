@@ -14,9 +14,10 @@ import traci
 import traci.constants as tc
 import matplotlib.pyplot as plt
 import numpy as np
+from io import BytesIO
 
 from utils.roadblocker import block_road
-from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts
+from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts, plot_highlighted_roads
 
 app = Flask(__name__)
 CORS(app)
@@ -268,7 +269,55 @@ def create_plot():
 def whatif():
     pass
 
+#to get the road_ids from the netfile so that we can make the dropdown menu
+@app.route('/road_ids', methods=['GET'])
+def get_road_ids():
+    net_file = os.path.join(config_folder_path, 'map.net.xml')  # Update this path to your net.xml file
+    print(f"Parsing XML file: {net_file}")  # Debug print
 
+    tree = ET.parse(net_file)
+    root = tree.getroot()
+
+    road_ids = []
+    print(f"Fetching Road IDs from net file ....")
+    for edge in root.findall('edge'):
+        edge_id = edge.get('id')
+        if edge_id and not edge_id.startswith(':'):  # Filter out internal edges
+            # print(f"Found road ID: {edge_id}")  # Debug print
+            road_ids.append(edge_id)
+
+    print(f"Total road IDs fetched: {len(road_ids)}")  # Debug print
+
+    return jsonify(road_ids)
+
+
+#this is triggered when the user selects any road
+@app.route('/select_road', methods=['POST'])
+def select_road():
+    data = request.json
+    road_id = data.get('road_id')
+
+    if not road_id:
+        return {'error': 'Road ID is required'}, 400
+
+    try:
+        # Path to your net.xml file
+        net_file = os.path.join(config_folder_path, 'map.net.xml')
+        fig = plot_highlighted_roads(net_file, road_id)
+
+        # Save the plot to a BytesIO object
+        img_io = BytesIO()
+        fig.savefig(img_io, format='png')
+        img_io.seek(0)
+        
+        return send_file(img_io, mimetype='image/png', as_attachment=False, download_name='plot.png')
+
+    except Exception as e:
+        print(f'Error occurred: {e}')
+        return {'error': 'Internal server error'}, 500
+
+
+#this will edit the netfile , blocking the selected road given RoadID
 @app.route('/update-road', methods=['POST'])
 def update_road():
     data = request.json

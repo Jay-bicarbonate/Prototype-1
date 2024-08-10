@@ -5,6 +5,7 @@ import RunSim from './components/RunSim';
 import RoadIdInput from './components/Roadblock';
 import GenerateConfigButton from './components/GenConfigFiles';
 import PlotComponent from './components/plotComponent';
+import RoadIDdrop from './components/RoadIDselector';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <GetActivityGenData/>
       <RunSim/>
       <PlotComponent/>
+      <RoadIDdrop/>
       <RoadIdInput/>
     </div>
   );
