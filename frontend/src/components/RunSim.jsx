@@ -24,9 +24,12 @@ class RunSim extends React.Component {
 
   render() {
     return (
+      <div>
+      <h2>Simulation !</h2>  
       <button onClick={this.runSimulation}>
         Run Simulation
       </button>
+      </div>
     );
   }
 }

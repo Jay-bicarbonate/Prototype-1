@@ -150,14 +150,6 @@ def TrafficGenerator():
     print(f'[*] Saving XML file at {stats_file_path}')
     tree.write(stats_file_path)
     
-    # Return a success message as JSON response
-    return jsonify({'message': 'Data received and stored in XML file'}), 200
-
-
-@app.route('/generate-config', methods=['POST'])
-def generate_config():
-    global RandomTripsCount
-
     sumo_network_filepath = os.path.join(config_folder_path, 'map.net.xml')
     stats_file_path = os.path.join(config_folder_path, 'stats.xml')
     output_file_path_ActivityGen = os.path.join(config_folder_path, 'routes.rou.xml')
@@ -165,8 +157,6 @@ def generate_config():
     duorouter_generated_file_path = os.path.join(config_folder_path, 'Final_routes.rou.xml')
 
     randomTripspy_path = os.path.join("C:\\Program Files (x86)\\Eclipse\\Sumo\\tools","randomTrips.py")
-
-    
 
     print()
     print('[*] executing ActivityGen...')
@@ -224,8 +214,9 @@ def generate_config():
 
     print("[#] All files generated Successfully")
     print()
-
-    return jsonify({"message": "Config file generated successfully!"}), 200
+    
+    # Return a success message as JSON response
+    return jsonify({'message': 'Data received and stored in XML file'}), 200
 
 #button click "run simulation" triggers this function to execute some commands
 #executes ActivityGen to create vehicle and executes duarouter to create routes

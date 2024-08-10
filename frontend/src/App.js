@@ -12,7 +12,6 @@ function App() {
       <h1>Finale Submission</h1>
       <GenerateMap/>
       <GetActivityGenData/>
-      <GenerateConfigButton/>
       <RunSim/>
       <PlotComponent/>
       <RoadIdInput/>

@@ -20,6 +20,7 @@ function PlotComponent() {
 
   return (
     <div>
+      <h2>Visualisation</h2>
       <button onClick={handleCreatePlot}>Create Plot</button>
       {plotUrl && <img src={plotUrl} alt="Generated Plot" />}
       {plotData && (
