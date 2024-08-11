@@ -18,6 +18,7 @@ from io import BytesIO
 
 from utils.roadblocker import block_road
 from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts, plot_highlighted_roads
+from utils.LLM import LLM
 
 app = Flask(__name__)
 CORS(app)
@@ -260,6 +261,26 @@ def create_plot():
     }
 
     return jsonify(response)
+
+
+#LLM here 
+@app.route('/generate-image', methods=['POST'])
+def generate_image():
+
+    data = request.json
+    text = data.get('text', '')
+
+    netstate_file = os.path.join(config_folder_path, 'netstatedump.xml')
+    
+    img = LLM(text,netstate_file)
+
+    # Convert to base64
+    img_base64 = base64.b64encode(img.read()).decode('utf-8')
+
+    # Example JSON data
+    json_data = {'example': 'data'}
+
+    return jsonify({'image': img_base64, 'json_data': json_data})
 
 
 #what-if scinario
