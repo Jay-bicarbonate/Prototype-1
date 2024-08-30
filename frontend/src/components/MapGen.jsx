@@ -1,57 +1,113 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'leaflet-draw';
 
-// 24.072170688204157, south: 23.981233711026714, east: 74.81498427757113, west: 74.69477235202582
+const GenerateMap = () => {
+  const mapRef = useRef(null);
+  const drawnItemsRef = useRef(null);
+  const [vehicleTrips, setVehicleTrips] = useState('');
 
-function GenerateMap() {
-  const [north, setNorth] = useState('24.072170688204157');
-  const [south, setSouth] = useState('23.981233711026714');
-  const [east, setEast] = useState('74.81498427757113');
-  const [west, setWest] = useState('74.69477235202582');
+  useEffect(() => {
+    // Initialize map
+    const map = L.map(mapRef.current).setView([20.5937, 78.9629], 5);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const data = { north, south, east, west };
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-    const response = await fetch('http://localhost:5000/generatemap', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    // Initialize FeatureGroup for drawn items
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    drawnItemsRef.current = drawnItems;
+
+    // Initialize draw control
+    const drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnItems
       },
-      body: JSON.stringify(data),
+      draw: {
+        polygon: false,
+        polyline: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      }
+    });
+    map.addControl(drawControl);
+
+    // Event listener for draw:created
+    map.on(L.Draw.Event.CREATED, (e) => {
+      const layer = e.layer;
+      drawnItems.clearLayers();
+      drawnItems.addLayer(layer);
     });
 
-    const result = await response.json();
-    console.log(result);
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  const handleReset = () => {
+    if (drawnItemsRef.current) {
+      drawnItemsRef.current.clearLayers();
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (drawnItemsRef.current && drawnItemsRef.current.getLayers().length > 0) {
+      const bounds = drawnItemsRef.current.getBounds();
+      const data = {
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+        trips: vehicleTrips // Include vehicle trips in the data
+      };
+
+      console.log('Sending data:', data);
+
+      try {
+        const response = await fetch('http://localhost:5000/generatemap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Response:', result);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    } else {
+      console.log('No area selected');
+    }
   };
 
   return (
-    <div className='mapGen'>
-      <h2>Map Generator</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          North:
-          <input type="text" value={north} onChange={(e) => setNorth(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          South:
-          <input type="text" value={south} onChange={(e) => setSouth(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          East:
-          <input type="text" value={east} onChange={(e) => setEast(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          West:
-          <input type="text" value={west} onChange={(e) => setWest(e.target.value)} />
-        </label>
-        <br />
-        <button type="submit">Submit</button>
-      </form>
+    <div>
+      <div ref={mapRef} style={{ height: '400px' }}></div>
+      <div>
+        <label htmlFor="vehicleTrips">Vehicle Trips: </label>
+        <input
+          type="text"
+          id="vehicleTrips"
+          value={vehicleTrips}
+          onChange={(e) => setVehicleTrips(e.target.value)}
+        />
+      </div>
+      <button onClick={handleReset}>Reset</button>
+      <button onClick={handleConfirm}>Confirm</button>
     </div>
   );
-}
+};
 
 export default GenerateMap;

@@ -38,6 +38,26 @@ def calculate_density(netstate_file):
 
     return total_density
 
+def total_density_by_road(net_file,netstatedump_file):
+    edges = extract_edges_from_net(net_file)
+    print(f"Extracted {len(edges)} edges from net file.")
+
+    total_density = calculate_density(netstatedump_file)
+    print(f"Calculated densities for {len(total_density)} edges.")
+
+    final_ = {}
+
+    for i in total_density:
+        if ":" not in i:
+            # print(f"{i} : {total_density[i]}")
+            final_[i] = total_density[i]
+    
+    # print(final_)
+    return final_
+    print("Done !!")
+
+
+
 def plot_total_vehicle_heatmap(net_file, netstatedump_file):
     print("Starting plot_total_vehicle_heatmap...")
     print(f"Net file: {net_file}")
@@ -186,7 +206,10 @@ def plot_highlighted_roads(net_file, road_id1):
 
     return fig
 
-# net_file = "E:\\finale-submission\\backend\\config\\map.net.xml"
-# netstate_file = "E:\\finale-submission\\backend\\config\\netstatedump.xml"
+net_file = "E:\\finale-submission\\backend\\config\\map.net.xml"
+netstate_file = "E:\\finale-submission\\backend\\config\\netstatedump.xml"
+
+
+# total_density_by_road(net_file,netstate_file)
 
 # plot_total_vehicle_heatmap(net_file,netstate_file)

@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
@@ -17,8 +18,9 @@ import numpy as np
 from io import BytesIO
 
 from utils.roadblocker import block_road
-from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts, plot_highlighted_roads
-from utils.LLM import LLM
+# from utils.Visualiser import plot_total_vehicle_heatmap, aggregate_vehicle_counts, plot_highlighted_roads
+from utils.Visualiser import total_density_by_road
+from utils.TrafficGen import TrafficGenerator
 
 app = Flask(__name__)
 CORS(app)
@@ -29,7 +31,21 @@ RandomTripsCount = None
 warnings.filterwarnings('ignore', category=UserWarning, module='osmnx')
 warnings.filterwarnings('ignore', category=FutureWarning, module='osmnx')
 
-config_folder_path = 'E:\\finale-submission\\backend\\config' 
+path_to_public_folder = 'E:/finale-submission/frontend/public'
+config_folder_path = 'E:\\finale-submission\\backend\\config'  #make sure to change this config to your config path
+
+
+
+def net2geojson(net_file,output_path):
+    #----------------------add your tools path here ------------------------#
+    path_to_tool = "C:/Program Files (x86)/Eclipse/Sumo/tools/net/net2geojson.py"
+
+
+    print("Converting XML to geojson...")
+    subprocess.run(['python', path_to_tool, '-n', net_file , '-o', output_path],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    print("conversion Complete :")
+
 
 @app.route('/generatemap', methods=['POST'])
 def MapGenerator():
@@ -44,6 +60,10 @@ def MapGenerator():
     south = data['south']
     east = data['east']
     west = data['west']
+
+    trips = data['trips']
+
+    print(f"Trips count : {trips}")
 
     # Define the bounding box (north, south, east, west)
     bbox = (north, south, east, west)
@@ -66,6 +86,13 @@ def MapGenerator():
         print()
         print(f"SUMO network file saved to {sumo_network_filepath}")
 
+        #-------------add appropiate outpute path for map.geojson-----------#
+        geojson_output_path = os.path.join(path_to_public_folder, 'map.geojson')
+        net2geojson(sumo_network_filepath,geojson_output_path)
+
+        #Generating Traffic using RandomTrips
+        TrafficGenerator(trips,config_folder_path)
+
         result = {"status" : "Map Generated Successfully !"}
 
         return jsonify(result)
@@ -75,150 +102,8 @@ def MapGenerator():
         print("Please check the bounding box coordinates or try a larger area.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
-
-
-#traffic Generator using the ActivityGen algorithm from SUMO
-#parameter will be provided via a input form for demographic data , then sent here in the form a JSON post req
-@app.route('/generatetraffic', methods=['POST'])
-def TrafficGenerator():
-
-    #to be used in "run simulation" later
-    global RandomTripsCount
-
-    # Receive JSON data from the request
-    data = request.json
-
-    #assigning value to the variable for later use in "run Simulation"
-    RandomTripsCount = str(data.get('randomTrips'))
-    print(f'[*] Received Random trips {RandomTripsCount}')
-
-    #now creating the XML file for ActivityGen
-    #this file will contain a lot demographic data such as general-info , population-info, work-hour-info etc.
-    # Create the root XML element
-    city = ET.Element('city')
-
-    # Create the 'general' sub-element with attributes from the received data
-    general = ET.SubElement(city, 'general', attrib={
-        'inhabitants': data.get('inhabitants', '1300'),
-        'households': data.get('households', '252'),
-        'childrenAgeLimit': data.get('childrenAgeLimit', '18'),
-        'retirementAgeLimit': data.get('retirementAgeLimit', '60'),
-        'carRate': data.get('carRate', '0.075'),
-        'unemploymentRate': data.get('unemploymentRate', '0.071'),
-        'footDistanceLimit': data.get('footDistanceLimit', '1.5'),
-        'incomingTraffic': data.get('incomingTraffic', '121'),
-        'outgoingTraffic': data.get('outgoingTraffic', '121')
-    })
-
-    # Add 'parameters' element
-    parameters = ET.SubElement(city, 'parameters', attrib={
-        'carPreference': '0.50',
-        'meanTimePerKmInCity': '6',
-        'freeTimeActivityRate': '0.15',
-        'uniformRandomTraffic': '0.20',
-        'departureVariation': '300'
-    })
-
-    # Add 'population' element with 'bracket' sub-elements
-    population = ET.SubElement(city, 'population')
-    ET.SubElement(population, 'bracket', attrib={'beginAge': '0', 'endAge': '30', 'peopleNbr': '40'})
-    ET.SubElement(population, 'bracket', attrib={'beginAge': '30', 'endAge': '60', 'peopleNbr': '30'})
-    ET.SubElement(population, 'bracket', attrib={'beginAge': '60', 'endAge': '90', 'peopleNbr': '30'})
-
-    # Add 'workHours' element with 'opening' and 'closing' sub-elements
-    work_hours = ET.SubElement(city, 'workHours')
-    ET.SubElement(work_hours, 'opening', attrib={'hour': '30600', 'proportion': '0.30'})
-    ET.SubElement(work_hours, 'opening', attrib={'hour': '32400', 'proportion': '0.70'})
-    ET.SubElement(work_hours, 'closing', attrib={'hour': '43200', 'proportion': '0.20'})
-    ET.SubElement(work_hours, 'closing', attrib={'hour': '63000', 'proportion': '0.20'})
-    ET.SubElement(work_hours, 'closing', attrib={'hour': '64800', 'proportion': '0.60'})
-
-    # Add 'streets' element with 'street' sub-elements
-    streets = ET.SubElement(city, 'streets')
-    ET.SubElement(streets, 'street', attrib={'edge': '0', 'population': '10', 'workPosition': '100'})
-    ET.SubElement(streets, 'street', attrib={'edge': '1', 'population': '10', 'workPosition': '100'})
-    ET.SubElement(streets, 'street', attrib={'edge': '10', 'population': '10', 'workPosition': '100'})
-
-    # Create an ElementTree object with the root element
-    print()
-    print('[*] Creating XML elements')
-    tree = ET.ElementTree(city)
     
-    # Define the path for the XML file to be saved (the file is called statistics file hence the name stats.xml)
-    stats_file_path = os.path.join(config_folder_path, 'stats.xml')
-    
-    # Write the XML data to the file
-    print(f'[*] Saving XML file at {stats_file_path}')
-    tree.write(stats_file_path)
-    
-    sumo_network_filepath = os.path.join(config_folder_path, 'map.net.xml')
-    stats_file_path = os.path.join(config_folder_path, 'stats.xml')
-    output_file_path_ActivityGen = os.path.join(config_folder_path, 'routes.rou.xml')
-    output_file_path_RandomTrips = os.path.join(config_folder_path, 'trips.trips.xml')
-    duorouter_generated_file_path = os.path.join(config_folder_path, 'Final_routes.rou.xml')
 
-    randomTripspy_path = os.path.join("C:\\Program Files (x86)\\Eclipse\\Sumo\\tools","randomTrips.py")
-
-    print()
-    print('[*] executing ActivityGen...')
-    subprocess.run(['activitygen', '--net-file', sumo_network_filepath, '--stat-file',stats_file_path, '--output-file', output_file_path_ActivityGen],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    
-    print('[*] executing duorouter...')
-    try:
-        subprocess.run(['duarouter', '--net-file', sumo_network_filepath, '--route-files', output_file_path_ActivityGen, '--output-file', duorouter_generated_file_path],
-                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
-        print("Continuing execution with randomTrips.py")
-        pass
-
-    print()
-    print(f'[*] Generating RandomTrips : {RandomTripsCount}....')
-    
-    subprocess.run(['python', randomTripspy_path, '--net-file', sumo_network_filepath, '-e', RandomTripsCount],
-                   cwd=config_folder_path, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
-    print('[*] executing duorouter...')
-    try:
-        subprocess.run(['duarouter', '--net-file', sumo_network_filepath, '--route-files', output_file_path_RandomTrips, '--output-file', duorouter_generated_file_path],
-                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")    
-
-
-    # Define the content of the sumocfg file
-    sumocfg_content = """
-    <configuration>
-        <input>
-            <net-file value="map.net.xml"/>
-            <route-files value="Final_routes.rou.xml"/>
-        </input>
-        <processing>
-            <ignore-route-errors value="true"/>
-        </processing>
-        <routing>
-            <device.rerouting.adaptation-steps value="18"/>
-            <device.rerouting.adaptation-interval value="10"/>
-        </routing>
-        <output>
-            <netstate-dump value="netstatedump.xml"/>
-        </output>
-    </configuration>
-    """
-    
-    print("[*]Generating main_sim.sumocfg.")
-    # Save the content to main_sim.sumocfg
-    sumocfg_file_path = os.path.join(config_folder_path, 'main_sim.sumocfg')
-    with open(sumocfg_file_path, "w") as file:
-        file.write(sumocfg_content)
-
-    print("[#] All files generated Successfully")
-    print()
-    
-    # Return a success message as JSON response
-    return jsonify({'message': 'Data received and stored in XML file'}), 200
 
 #button click "run simulation" triggers this function to execute some commands
 #executes ActivityGen to create vehicle and executes duarouter to create routes
@@ -236,106 +121,18 @@ def run_simulation():
 
     return jsonify(result)
 
-
-
-#visualisation
-#this function will visualise the generated traffic data and show it to the user as per the parameters.
-#parameters could be different visulaisation option such as "average speed per road" OR "total vehicle count per road" etc
-@app.route('/create-plot', methods=['GET'])
-def create_plot():
-
+#this function sends the density data per road to the frontend in the form of JSON 
+#which is extracted by frontend to generated interactive heatmap
+@app.route('/get-density-data', methods=['GET'])
+def send_density_data():
+    #density data in the form of a dict with RoadIDs as Keys and values as total density
     net_file = os.path.join(config_folder_path, 'map.net.xml')
     netstate_file = os.path.join(config_folder_path, 'netstatedump.xml')
 
-    #get plot image and covert to b64 to send!!
-    img = plot_total_vehicle_heatmap(net_file,netstate_file)
-    img_base64 = base64.b64encode(img.read()).decode('utf-8')
+    density_data = total_density_by_road(net_file,netstate_file)
+    # print(f"density_data : {density_data}")
 
-    # Get JSON plot data
-    json_plot_data = aggregate_vehicle_counts(netstate_file, net_file)
-
-    # Combine the image data and JSON data into one response
-    response = {
-        'image': img_base64,
-        'json_data': json_plot_data
-    }
-
-    return jsonify(response)
-
-
-#LLM here 
-@app.route('/generate-image', methods=['POST'])
-def generate_image():
-
-    data = request.json
-    text = data.get('text', '')
-
-    netstate_file = os.path.join(config_folder_path, 'netstatedump.xml')
-    
-    img = LLM(text,netstate_file)
-
-    # Convert to base64
-    img_base64 = base64.b64encode(img.read()).decode('utf-8')
-
-    # Example JSON data
-    json_data = {'example': 'data'}
-
-    return jsonify({'image': img_base64, 'json_data': json_data})
-
-
-#what-if scinario
-#need to think about this one , either do it in the webapp or need to use SUMO netedit for similicity.
-#implimenting netedit functionality into a webapp would be a time taking and not so easy task tbh.
-@app.route('/whatif', methods=['POST'])
-def whatif():
-    pass
-
-#to get the road_ids from the netfile so that we can make the dropdown menu
-@app.route('/road_ids', methods=['GET'])
-def get_road_ids():
-    net_file = os.path.join(config_folder_path, 'map.net.xml')  # Update this path to your net.xml file
-    print(f"Parsing XML file: {net_file}")  # Debug print
-
-    tree = ET.parse(net_file)
-    root = tree.getroot()
-
-    road_ids = []
-    print(f"Fetching Road IDs from net file ....")
-    for edge in root.findall('edge'):
-        edge_id = edge.get('id')
-        if edge_id and not edge_id.startswith(':'):  # Filter out internal edges
-            # print(f"Found road ID: {edge_id}")  # Debug print
-            road_ids.append(edge_id)
-
-    print(f"Total road IDs fetched: {len(road_ids)}")  # Debug print
-
-    return jsonify(road_ids)
-
-
-#this is triggered when the user selects any road
-@app.route('/select_road', methods=['POST'])
-def select_road():
-    data = request.json
-    road_id = data.get('road_id')
-
-    if not road_id:
-        return {'error': 'Road ID is required'}, 400
-
-    try:
-        # Path to your net.xml file
-        net_file = os.path.join(config_folder_path, 'map.net.xml')
-        fig = plot_highlighted_roads(net_file, road_id)
-
-        # Save the plot to a BytesIO object
-        img_io = BytesIO()
-        fig.savefig(img_io, format='png')
-        img_io.seek(0)
-        
-        return send_file(img_io, mimetype='image/png', as_attachment=False, download_name='plot.png')
-
-    except Exception as e:
-        print(f'Error occurred: {e}')
-        return {'error': 'Internal server error'}, 500
+    return jsonify(density_data)
 
 
 #this will edit the netfile , blocking the selected road given RoadID
